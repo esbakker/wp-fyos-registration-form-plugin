@@ -153,9 +153,23 @@ bash build-zip.sh
 Both produce `fyos-registration-form.zip` with the plugin files at the archive root,
 ready for **Plugins → Add New → Upload Plugin**.
 
-Pushing to `main` runs `.github/workflows/release.yml`, which bumps the version in the
-plugin header (minor when the commit message contains "feature", patch otherwise),
-builds the zip, tags the commit and publishes a GitHub release with the zip attached.
+### Releasing
+
+The version in the plugin header is the source of truth. Bump it as part of your change:
+
+```bash
+bash bump.sh patch      # or minor, major, or an explicit 2.1.0
+```
+
+```powershell
+.\bump.ps1 patch
+```
+
+Pushing that commit to `main` runs `.github/workflows/release.yml`, which reads the
+version, builds the zip, and publishes a GitHub release with the zip attached. The tag is
+created by the release API at the pushed commit — the workflow never writes to the
+repository, so a ruleset protecting `main` does not block it. A push whose version is
+already released does nothing, so ordinary commits without a bump are free.
 
 ## Requirements
 
