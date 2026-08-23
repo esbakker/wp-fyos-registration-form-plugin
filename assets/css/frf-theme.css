@@ -203,8 +203,19 @@
  * 5. Checkboxes, radios and switches
  * ---------------------------------------------------------------------- */
 
-.registration-form .custom-control-input:checked ~ .custom-control-label::before,
-.registration-form .custom-control-input:indeterminate ~ .custom-control-label::before {
+.registration-form .custom-control-input:checked ~ .custom-control-label::before {
+	background-color: var(--frf-accent);
+	border-color: var(--frf-accent);
+}
+
+/*
+ * Only checkboxes have a meaningful indeterminate state. Every radio in a
+ * group where nothing is selected yet also matches :indeterminate, so an
+ * unqualified rule here would paint a whole radio group as chosen until the
+ * visitor picks an option. Bootstrap scopes this to .custom-checkbox for the
+ * same reason.
+ */
+.registration-form .custom-checkbox .custom-control-input:indeterminate ~ .custom-control-label::before {
 	background-color: var(--frf-accent);
 	border-color: var(--frf-accent);
 }
