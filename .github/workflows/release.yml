@@ -1,0 +1,134 @@
+name: Release
+
+# Runs on every push to main/master.
+# Reads the HEAD commit message, bumps the plugin version (minor if the
+# message contains the word "feature", patch otherwise), builds the zip,
+# commits the version change back, and publishes a GitHub release.
+#
+# Pushes made by GITHUB_TOKEN never re-trigger this workflow (GitHub's
+# built-in protection), so there is no risk of an infinite loop.
+
+on:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: write   # needed to push the version-bump commit, tag, and create the release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ------------------------------------------------------------------ #
+      # 1. Checkout — full token so we can push the version-bump commit back #
+      # ------------------------------------------------------------------ #
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ------------------------------------------------------------------ #
+      # 2. Determine bump type from the HEAD commit message                 #
+      # ------------------------------------------------------------------ #
+      - name: Determine bump type
+        id: bump
+        env:
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          if echo "$MSG" | grep -qi 'feature'; then
+            echo "type=minor" >> "$GITHUB_OUTPUT"
+            echo "Bump type: minor (commit message contains 'feature')"
+          else
+            echo "type=patch" >> "$GITHUB_OUTPUT"
+            echo "Bump type: patch"
+          fi
+
+      # ------------------------------------------------------------------ #
+      # 3. Read current version and calculate the new one                   #
+      # ------------------------------------------------------------------ #
+      - name: Calculate new version
+        id: version
+        run: |
+          FILE="fyos-registration-form.php"
+
+          # Portable sed — works on Ubuntu and macOS without -P (Perl regex).
+          CURRENT=$(sed -n 's/.*\* Version:[[:space:]]*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/p' \
+                        "$FILE" | head -1)
+
+          if [ -z "$CURRENT" ]; then
+            echo "Error: could not read version from $FILE" >&2
+            exit 1
+          fi
+
+          IFS='.' read -ra V <<< "$CURRENT"
+          MAJOR="${V[0]}"; MINOR="${V[1]}"; PATCH="${V[2]}"
+
+          if [ "${{ steps.bump.outputs.type }}" = "minor" ]; then
+            NEW="$MAJOR.$((MINOR + 1)).0"
+          else
+            NEW="$MAJOR.$MINOR.$((PATCH + 1))"
+          fi
+
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "new=$NEW"         >> "$GITHUB_OUTPUT"
+          echo "Version: $CURRENT → $NEW"
+
+      # ------------------------------------------------------------------ #
+      # 4. Rewrite the two version strings in the plugin file               #
+      # ------------------------------------------------------------------ #
+      - name: Update version in plugin file
+        run: |
+          FILE="fyos-registration-form.php"
+          NEW="${{ steps.version.outputs.new }}"
+
+          # "* Version:           x.y.z" — preserve the whitespace alignment.
+          sed -i -E \
+            "s/(\* Version:[[:space:]]+)[0-9]+\.[0-9]+\.[0-9]+/\1$NEW/" \
+            "$FILE"
+
+          # define( 'FRF_VERSION', 'x.y.z' );
+          sed -i \
+            "s/define( 'FRF_VERSION', '[^']*' );/define( 'FRF_VERSION', '$NEW' );/" \
+            "$FILE"
+
+          echo "Updated version strings:"
+          grep -E "Version:|FRF_VERSION" "$FILE"
+
+      # ------------------------------------------------------------------ #
+      # 5. Build the distributable zip                                      #
+      # ------------------------------------------------------------------ #
+      - name: Build zip
+        run: bash build-zip.sh
+
+      # ------------------------------------------------------------------ #
+      # 6. Commit the version bump, tag it, and push                        #
+      # ------------------------------------------------------------------ #
+      - name: Commit, tag and push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add fyos-registration-form.php
+          git commit -m "chore: bump version to v${{ steps.version.outputs.new }} [skip ci]"
+
+          # Annotated tag so --follow-tags picks it up in the push.
+          git tag -a "v${{ steps.version.outputs.new }}" \
+                 -m "Release v${{ steps.version.outputs.new }}"
+
+          git push --follow-tags
+
+      # ------------------------------------------------------------------ #
+      # 7. Publish the GitHub release with the zip as an asset              #
+      # ------------------------------------------------------------------ #
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.new }}
+          name:     v${{ steps.version.outputs.new }}
+          body: |
+            **Bump type:** ${{ steps.bump.outputs.type }}
+
+            **Commit:** ${{ github.event.head_commit.message }}
+          files: fyos-registration-form.zip
+          fail_on_unmatched_files: true

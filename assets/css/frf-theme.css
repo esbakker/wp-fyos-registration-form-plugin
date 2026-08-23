@@ -1,0 +1,348 @@
+/**
+ * FOYS Registration Form — WordPress theme bridge.
+ *
+ * The FOYS bundle ships Bootstrap 4.6 and BootstrapVue with every selector
+ * scoped to `.registration-form`, so it never leaks into the theme. The flip
+ * side is that the form ends up looking like stock Bootstrap on a site that
+ * looks like anything but. This stylesheet pulls the form back towards the
+ * active theme: its fonts, its accent colour, its rounding.
+ *
+ * Colours come from custom properties that PHP fills in per site
+ * (see FRF_Theme_CSS); the values below are only fallbacks.
+ */
+
+.registration-form {
+	--frf-accent: #007bff;
+	--frf-accent-contrast: #ffffff;
+	--frf-accent-hover: #0062cc;
+	--frf-accent-soft: rgba(0, 123, 255, 0.25);
+	--frf-radius: 0.25rem;
+	--frf-border: rgba(0, 0, 0, 0.18);
+	--frf-muted: rgba(0, 0, 0, 0.6);
+	--frf-field-bg: #ffffff;
+}
+
+/* -------------------------------------------------------------------------
+ * 1. Typography — inherit the theme instead of Bootstrap's rem scale.
+ * ---------------------------------------------------------------------- */
+
+.registration-form {
+	font-family: inherit;
+	font-size: inherit;
+	line-height: inherit;
+	color: inherit;
+	text-align: left;
+}
+
+/*
+ * Headings are deliberately left alone: neither Bootstrap nor FOYS sets a
+ * font-family on them, so the theme's own h1–h6 rules come through. Declaring
+ * `font-family: inherit` here would override that with the body font.
+ */
+.registration-form legend {
+	font-family: inherit;
+	color: inherit;
+}
+
+.registration-form label,
+.registration-form .col-form-label,
+.registration-form .form-control,
+.registration-form .custom-select,
+.registration-form .btn,
+.registration-form .input-group-text,
+.registration-form .dropdown-item,
+.registration-form .modal-title,
+.registration-form .nav-link {
+	font-family: inherit;
+	font-size: inherit;
+	line-height: inherit;
+}
+
+.registration-form .form-text,
+.registration-form small,
+.registration-form .small,
+.registration-form .text-muted {
+	font-size: 0.875em;
+	color: var(--frf-muted) !important;
+}
+
+.registration-form label,
+.registration-form .col-form-label {
+	font-weight: 600;
+}
+
+/* -------------------------------------------------------------------------
+ * 2. Links
+ * ---------------------------------------------------------------------- */
+
+.registration-form a:not(.btn) {
+	color: var(--frf-accent);
+	text-decoration: underline;
+}
+
+.registration-form a:not(.btn):hover,
+.registration-form a:not(.btn):focus {
+	color: var(--frf-accent-hover);
+}
+
+/* -------------------------------------------------------------------------
+ * 3. Fields
+ * ---------------------------------------------------------------------- */
+
+.registration-form .form-control,
+.registration-form .custom-select,
+.registration-form .custom-file-label,
+.registration-form .input-group-text {
+	height: auto;
+	min-height: calc(1.5em + 0.75rem + 2px);
+	padding: 0.5rem 0.75rem;
+	color: inherit;
+	background-color: var(--frf-field-bg);
+	border: 1px solid var(--frf-border);
+	border-radius: var(--frf-radius);
+	box-shadow: none;
+	transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.registration-form textarea.form-control {
+	min-height: calc(3em + 1rem + 2px);
+}
+
+.registration-form .form-control::placeholder {
+	color: var(--frf-muted);
+	opacity: 1;
+}
+
+.registration-form .form-control:focus,
+.registration-form .custom-select:focus,
+.registration-form .custom-file-input:focus ~ .custom-file-label {
+	border-color: var(--frf-accent);
+	box-shadow: 0 0 0 0.2rem var(--frf-accent-soft);
+	outline: 0;
+}
+
+.registration-form .form-control:disabled,
+.registration-form .form-control[readonly] {
+	background-color: rgba(0, 0, 0, 0.04);
+	opacity: 1;
+}
+
+/* Keep Bootstrap's red/green validation cues, only soften the ring. */
+.registration-form .was-validated .form-control:invalid:focus,
+.registration-form .form-control.is-invalid:focus {
+	box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.2);
+}
+
+.registration-form .invalid-feedback,
+.registration-form .invalid-tooltip {
+	font-size: 0.875em;
+}
+
+/* -------------------------------------------------------------------------
+ * 4. Buttons
+ * ---------------------------------------------------------------------- */
+
+.registration-form .btn {
+	padding: 0.5rem 1.1rem;
+	font-weight: 600;
+	border-radius: var(--frf-radius);
+	box-shadow: none;
+	transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.registration-form .btn:focus,
+.registration-form .btn.focus {
+	box-shadow: 0 0 0 0.2rem var(--frf-accent-soft);
+}
+
+.registration-form .btn-primary,
+.registration-form .btn-info,
+.registration-form .btn-success {
+	color: var(--frf-accent-contrast);
+	background-color: var(--frf-accent);
+	border-color: var(--frf-accent);
+}
+
+.registration-form .btn-primary:hover,
+.registration-form .btn-primary:focus,
+.registration-form .btn-primary:active,
+.registration-form .btn-primary:not(:disabled):not(.disabled):active,
+.registration-form .btn-info:hover,
+.registration-form .btn-success:hover,
+.registration-form .show > .btn-primary.dropdown-toggle {
+	color: var(--frf-accent-contrast);
+	background-color: var(--frf-accent-hover);
+	border-color: var(--frf-accent-hover);
+}
+
+.registration-form .btn-outline-primary,
+.registration-form .btn-link {
+	color: var(--frf-accent);
+	border-color: var(--frf-accent);
+}
+
+.registration-form .btn-link {
+	border-color: transparent;
+	text-decoration: underline;
+}
+
+.registration-form .btn-outline-primary:hover,
+.registration-form .btn-outline-primary:not(:disabled):not(.disabled):active,
+.registration-form .show > .btn-outline-primary.dropdown-toggle {
+	color: var(--frf-accent-contrast);
+	background-color: var(--frf-accent);
+	border-color: var(--frf-accent);
+}
+
+.registration-form .btn-secondary,
+.registration-form .btn-outline-secondary {
+	border-radius: var(--frf-radius);
+}
+
+/* -------------------------------------------------------------------------
+ * 5. Checkboxes, radios and switches
+ * ---------------------------------------------------------------------- */
+
+.registration-form .custom-control-input:checked ~ .custom-control-label::before,
+.registration-form .custom-control-input:indeterminate ~ .custom-control-label::before {
+	background-color: var(--frf-accent);
+	border-color: var(--frf-accent);
+}
+
+.registration-form .custom-control-input:focus ~ .custom-control-label::before {
+	box-shadow: 0 0 0 0.2rem var(--frf-accent-soft);
+}
+
+.registration-form .custom-control-input:focus:not(:checked) ~ .custom-control-label::before,
+.registration-form .custom-control-input:not(:disabled):active ~ .custom-control-label::before {
+	border-color: var(--frf-accent);
+}
+
+/*
+ * Bootstrap positions the box and the tick at a fixed offset that assumes a
+ * line-height of 1.5. Themes with roomier text would leave the box floating
+ * above its label, so pin the line-height back for these labels only.
+ */
+.registration-form .custom-control-label {
+	font-weight: 400;
+	line-height: 1.5;
+}
+
+.registration-form .custom-checkbox .custom-control-label::before {
+	border-radius: calc(var(--frf-radius) * 0.75);
+}
+
+.registration-form .custom-range::-webkit-slider-thumb {
+	background-color: var(--frf-accent);
+}
+
+.registration-form .custom-range::-moz-range-thumb {
+	background-color: var(--frf-accent);
+}
+
+/* -------------------------------------------------------------------------
+ * 6. Cards, alerts, list groups, tabs
+ * ---------------------------------------------------------------------- */
+
+.registration-form .card,
+.registration-form .alert,
+.registration-form .list-group-item:first-child,
+.registration-form .modal-content,
+.registration-form .dropdown-menu {
+	border-radius: var(--frf-radius);
+	border-color: var(--frf-border);
+}
+
+.registration-form .card {
+	background-color: transparent;
+}
+
+.registration-form .card-header {
+	background-color: rgba(0, 0, 0, 0.03);
+	border-bottom-color: var(--frf-border);
+}
+
+.registration-form .list-group-item.active,
+.registration-form .page-item.active .page-link,
+.registration-form .dropdown-item.active,
+.registration-form .dropdown-item:active,
+.registration-form .nav-pills .nav-link.active {
+	color: var(--frf-accent-contrast);
+	background-color: var(--frf-accent);
+	border-color: var(--frf-accent);
+}
+
+.registration-form .page-link,
+.registration-form .nav-tabs .nav-link.active {
+	color: var(--frf-accent);
+}
+
+.registration-form .progress-bar,
+.registration-form .badge-primary {
+	background-color: var(--frf-accent);
+	color: var(--frf-accent-contrast);
+}
+
+.registration-form .spinner-border,
+.registration-form .spinner-grow {
+	color: var(--frf-accent);
+}
+
+/* -------------------------------------------------------------------------
+ * 7. Date picker (b-form-datepicker / b-calendar)
+ * ---------------------------------------------------------------------- */
+
+.registration-form .b-calendar .btn.btn-primary,
+.registration-form .b-calendar-grid-body .col[data-date] .btn.active,
+.registration-form .b-calendar-grid-body .col[data-date] .btn.focus {
+	background-color: var(--frf-accent);
+	border-color: var(--frf-accent);
+	color: var(--frf-accent-contrast);
+}
+
+.registration-form .b-calendar-grid-body .col[data-date] .btn:hover {
+	background-color: var(--frf-accent-soft);
+}
+
+.registration-form .b-form-datepicker > .btn,
+.registration-form .b-form-timepicker > .btn {
+	border-radius: var(--frf-radius) 0 0 var(--frf-radius);
+}
+
+/* -------------------------------------------------------------------------
+ * 8. Layout
+ *
+ * The form sits inside a theme container that already has padding, so the
+ * Bootstrap container should not add another gutter.
+ * ---------------------------------------------------------------------- */
+
+.frf-registration-form .registration-form > .container,
+.frf-registration-form .registration-form > .container-fluid {
+	max-width: none;
+	padding-left: 0;
+	padding-right: 0;
+}
+
+.frf-registration-form .frf-notice {
+	padding: 0.75em 1em;
+	border-left: 4px solid #d63638;
+	background: rgba(214, 54, 56, 0.06);
+}
+
+/* -------------------------------------------------------------------------
+ * 9. Portalled overlays
+ *
+ * BootstrapVue moves modals, tooltips and toasts to <body>, outside the
+ * scoped stylesheet. assets/js/frf-portal.js tags those containers with
+ * `.registration-form .frf-portal` so the scoped rules reach them again;
+ * these few rules cover the body-level bits that stay unscoped.
+ * ---------------------------------------------------------------------- */
+
+body.modal-open {
+	overflow: hidden;
+}
+
+.frf-portal.registration-form {
+	font-family: inherit;
+	color: inherit;
+}
