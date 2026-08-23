@@ -2,22 +2,45 @@
  * FOYS Registration Form — portal fixer.
  *
  * Every FOYS/Bootstrap selector is scoped to `.registration-form`, which keeps
- * the form's CSS out of the theme. BootstrapVue, however, moves its overlays
- * (the "person already exists" modal, tooltips, toasts) to a container it
- * appends to <body> — outside that scope, so they render unstyled.
+ * the form's CSS out of the theme. BootstrapVue, however, renders its overlays
+ * outside the form: the "person already exists" modal goes into a container it
+ * appends to <body>, and the `v-b-popover` help bubbles are appended to <body>
+ * directly. Both land outside that scope, so they render unstyled.
  *
- * This script watches for those containers and tags them with
- * `registration-form frf-portal`, putting them back inside the scope.
+ * There are therefore two cases to repair:
  *
- * The signature is deliberately BootstrapVue-specific: it keys off the ids the
- * library generates (`…__BV_modal_outer_`, `__BVID__12`), never off generic
- * Bootstrap classes a theme might also use. Only nodes added to <body> after
- * page load are considered, so existing theme markup is never touched.
+ *   1. A container whose *descendant* is the overlay (modals). Adding the scope
+ *      class to the container is enough — `.registration-form .modal` matches.
+ *   2. The overlay *itself* is the body child (popovers, tooltips). A class on
+ *      the element cannot help, because the scoped rules are descendant
+ *      selectors. These are moved into one shared host element that carries the
+ *      scope class. The host is unstyled and unpositioned, so it changes no
+ *      layout: the overlays are absolutely positioned and their containing
+ *      block is unchanged. BootstrapVue removes its overlays via
+ *      `parentNode.removeChild`, so relocating them is safe.
+ *
+ * The signature is deliberately BootstrapVue-specific: it keys off the ids and
+ * class names the library generates (`__bv_popover_7__`, `…__BV_modal_outer_`,
+ * `b-popover`), never off generic Bootstrap classes a theme might also use.
+ * Only nodes added to <body> after page load are considered, so existing theme
+ * markup is never touched.
  */
 ( function () {
 	'use strict';
 
-	var SIGNATURE = '[id*="__BV_"],[id^="__BVID__"],.b-toast,.b-toaster,.b-sidebar';
+	// BootstrapVue uses `__bv_` for the elements it generates and `__BV_` for
+	// ids derived from a component id, so both cases have to be listed.
+	var SIGNATURE = [
+		'[id*="__bv_"]',
+		'[id*="__BV_"]',
+		'[id^="__BVID__"]',
+		'.b-popover',
+		'.b-tooltip',
+		'.b-toast',
+		'.b-toaster',
+		'.b-sidebar'
+	].join( ',' );
+
 	var TAGGED = 'frf-portal';
 	var SCOPE = 'registration-form';
 
@@ -28,13 +51,22 @@
 	/** Containers seen being added to <body>, still waiting for content. */
 	var pending = [];
 
+	/** Shared, unstyled host for overlays that are body children themselves. */
+	var host = null;
+
 	function matches( el, selector ) {
 		var fn = el.matches || el.msMatchesSelector || el.webkitMatchesSelector;
 		return fn ? fn.call( el, selector ) : false;
 	}
 
-	function isPortal( el ) {
-		return matches( el, SIGNATURE ) || !! el.querySelector( SIGNATURE );
+	function scopeHost() {
+		if ( ! host || ! host.parentNode ) {
+			host = document.createElement( 'div' );
+			host.className = SCOPE + ' ' + TAGGED;
+			host.setAttribute( 'data-frf-portal-host', '' );
+			document.body.appendChild( host );
+		}
+		return host;
 	}
 
 	function tag( el ) {
@@ -57,7 +89,15 @@
 				continue;
 			}
 
-			if ( isPortal( el ) ) {
+			// Case 2 — the overlay itself. Move it under the scope host.
+			if ( matches( el, SIGNATURE ) ) {
+				el.classList.add( TAGGED );
+				scopeHost().appendChild( el );
+				continue;
+			}
+
+			// Case 1 — a container holding the overlay.
+			if ( el.querySelector( SIGNATURE ) ) {
 				tag( el );
 				continue;
 			}
@@ -96,8 +136,13 @@
 					continue;
 				}
 
-				// Only direct children of <body> are candidate portals.
-				if ( node.parentNode === document.body && ! node.classList.contains( SCOPE ) ) {
+				// Only direct children of <body> are candidate portals, and
+				// never anything already inside the scope (the form, the host).
+				if (
+					node.parentNode === document.body &&
+					! node.classList.contains( SCOPE ) &&
+					! node.classList.contains( TAGGED )
+				) {
 					pending.push( node );
 					touched = true;
 					continue;

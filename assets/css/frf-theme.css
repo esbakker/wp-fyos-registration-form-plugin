@@ -66,9 +66,24 @@
 	color: var(--frf-muted) !important;
 }
 
+/*
+ * Labels keep the theme's normal text weight — Bootstrap's own label styling
+ * is already unweighted, and bolding every field label makes a long form shout.
+ */
 .registration-form label,
-.registration-form .col-form-label {
-	font-weight: 600;
+.registration-form .col-form-label,
+.registration-form legend.col-form-label {
+	font-weight: inherit;
+}
+
+/*
+ * Each field is a two-column row: the label on the left, the control (plus its
+ * description and validation message) on the right. The columns stretch to the
+ * same height by default, which leaves the label stranded at the top of a tall
+ * row, so line the two up through the middle instead.
+ */
+.registration-form .form-row {
+	align-items: center;
 }
 
 /* -------------------------------------------------------------------------
@@ -356,4 +371,28 @@ body.modal-open {
 .frf-portal.registration-form {
 	font-family: inherit;
 	color: inherit;
+}
+
+/*
+ * Bootstrap runs its reset-text mixin on popovers and tooltips so they are not
+ * affected by whatever they annotate — which also throws away the theme font
+ * the rest of the form inherits. Put it back. The border colour is left as
+ * Bootstrap's, because the arrow's ::before/::after are drawn to match it.
+ */
+.registration-form .popover,
+.registration-form .tooltip {
+	font-family: inherit;
+	font-size: 0.875em;
+	line-height: inherit;
+}
+
+.registration-form .popover {
+	border-radius: var(--frf-radius);
+}
+
+.registration-form .popover-header {
+	font-family: inherit;
+	border-bottom-color: var(--frf-border);
+	border-top-left-radius: var(--frf-radius);
+	border-top-right-radius: var(--frf-radius);
 }
