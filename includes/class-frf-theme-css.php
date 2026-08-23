@@ -78,6 +78,184 @@ class FRF_Theme_CSS {
 	}
 
 	/**
+	 * Prefix every selector in a block of CSS with the form's scope, so an
+	 * admin's extra CSS can only ever affect the form.
+	 *
+	 * Rules that are already scoped are left alone, `@media` and friends are
+	 * descended into, and `@keyframes`/`@font-face` are passed through
+	 * untouched because their contents are not selectors.
+	 *
+	 * @param string $css    Raw CSS.
+	 * @param string $prefix Scope selector.
+	 * @return string
+	 */
+	public static function scope( $css, $prefix = '.registration-form' ) {
+		// Comments can hide braces, so they go first.
+		$css = preg_replace( '#/\*.*?\*/#s', '', (string) $css );
+
+		if ( '' === trim( (string) $css ) ) {
+			return '';
+		}
+
+		return self::scope_block( $css, $prefix );
+	}
+
+	/**
+	 * Scope one level of CSS, recursing into conditional at-rules.
+	 *
+	 * @param string $css    CSS to scope.
+	 * @param string $prefix Scope selector.
+	 * @return string
+	 */
+	private static function scope_block( $css, $prefix ) {
+		$out    = '';
+		$length = strlen( $css );
+		$i      = 0;
+
+		while ( $i < $length ) {
+			$brace = strpos( $css, '{', $i );
+			$semi  = strpos( $css, ';', $i );
+
+			// No block left — keep any trailing statement as-is.
+			if ( false === $brace ) {
+				$rest = trim( substr( $css, $i ) );
+				if ( '' !== $rest ) {
+					$out .= $rest;
+				}
+				break;
+			}
+
+			// A statement at-rule such as `@import …;`.
+			if ( false !== $semi && $semi < $brace ) {
+				$statement = trim( substr( $css, $i, $semi - $i + 1 ) );
+				if ( '' !== $statement ) {
+					$out .= $statement;
+				}
+				$i = $semi + 1;
+				continue;
+			}
+
+			$prelude = trim( substr( $css, $i, $brace - $i ) );
+
+			// Walk to the matching closing brace.
+			$start = $brace + 1;
+			$depth = 1;
+			$j     = $start;
+			while ( $j < $length && $depth > 0 ) {
+				if ( '{' === $css[ $j ] ) {
+					$depth++;
+				} elseif ( '}' === $css[ $j ] ) {
+					$depth--;
+				}
+				$j++;
+			}
+
+			$body = substr( $css, $start, max( 0, $j - 1 - $start ) );
+			$i    = $j;
+
+			if ( '' === $prelude ) {
+				continue;
+			}
+
+			if ( '@' === $prelude[0] ) {
+				$name = strtolower( preg_replace( '/^@([a-zA-Z-]+).*$/s', '$1', $prelude ) );
+
+				// Conditional groups wrap ordinary rules, so descend.
+				if ( in_array( $name, array( 'media', 'supports', 'document', 'container', 'layer' ), true ) ) {
+					$out .= $prelude . '{' . self::scope_block( $body, $prefix ) . '}';
+				} else {
+					// @keyframes, @font-face, @page: not selectors.
+					$out .= $prelude . '{' . $body . '}';
+				}
+				continue;
+			}
+
+			$out .= self::scope_selectors( $prelude, $prefix ) . '{' . trim( $body ) . '}';
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Scope a comma-separated selector list.
+	 *
+	 * @param string $prelude Selector list.
+	 * @param string $prefix  Scope selector.
+	 * @return string
+	 */
+	private static function scope_selectors( $prelude, $prefix ) {
+		$parts  = array();
+		$buffer = '';
+		$depth  = 0;
+		$length = strlen( $prelude );
+
+		for ( $i = 0; $i < $length; $i++ ) {
+			$char = $prelude[ $i ];
+
+			if ( '(' === $char || '[' === $char ) {
+				$depth++;
+			} elseif ( ')' === $char || ']' === $char ) {
+				$depth--;
+			}
+
+			// Commas inside :is(), :not() or an attribute value are not
+			// selector separators.
+			if ( ',' === $char && $depth <= 0 ) {
+				$parts[] = $buffer;
+				$buffer  = '';
+				continue;
+			}
+
+			$buffer .= $char;
+		}
+
+		$parts[] = $buffer;
+
+		$scoped = array();
+		foreach ( $parts as $selector ) {
+			$selector = trim( preg_replace( '/\s+/', ' ', $selector ) );
+			if ( '' === $selector ) {
+				continue;
+			}
+			$scoped[] = self::scope_selector( $selector, $prefix );
+		}
+
+		return implode( ',', $scoped );
+	}
+
+	/**
+	 * Scope a single selector.
+	 *
+	 * @param string $selector One selector.
+	 * @param string $prefix   Scope selector.
+	 * @return string
+	 */
+	private static function scope_selector( $selector, $prefix ) {
+		// Already scoped — but `.registration-form-thing` only looks like it.
+		if ( 0 === strpos( $selector, $prefix ) ) {
+			$next = substr( $selector, strlen( $prefix ), 1 );
+			if ( '' === $next || ! preg_match( '/[A-Za-z0-9_-]/', $next ) ) {
+				return $selector;
+			}
+		}
+
+		// html/body/:root can never appear inside the form, so read them as
+		// "the form itself" rather than producing a selector that never matches.
+		$selector = preg_replace( '/^(?:html|body|:root)\b\s*/i', '', $selector );
+
+		if ( '' === $selector ) {
+			return $prefix;
+		}
+
+		// A leading combinator has to stay attached to the prefix.
+		if ( preg_match( '/^[>+~]/', $selector ) ) {
+			return $prefix . $selector;
+		}
+
+		return $prefix . ' ' . $selector;
+	}
+
+	/**
 	 * Accent colour: explicit setting first, then the theme, then a var chain
 	 * that resolves in the browser for block themes.
 	 *

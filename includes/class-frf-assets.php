@@ -210,9 +210,11 @@ class FRF_Assets {
 
 		$css = $this->theme_css->build();
 
+		// The admin's extra CSS is scoped for them, so a stray `a { … }` cannot
+		// restyle the whole site.
 		$extra = (string) $this->settings->get( 'custom_css', '' );
 		if ( '' !== trim( $extra ) ) {
-			$css .= "\n" . $extra;
+			$css .= "\n" . FRF_Theme_CSS::scope( $extra );
 		}
 
 		wp_add_inline_style( self::HANDLE_THEME_CSS, $css );

@@ -110,8 +110,22 @@ The accent colour is resolved server-side, in this order:
    to Bootstrap blue.
 
 The accent text colour is picked automatically from the accent's relative luminance
-unless it is set explicitly. Anything left over goes in the **Extra CSS** box on the
-settings screen — prefix rules with `.registration-form`.
+unless it is set explicitly.
+
+Anything left over goes in the **Extra CSS** box on the settings screen. Selectors there
+are scoped to the form for you, so `.btn { … }` becomes
+`.registration-form .btn { … }` and cannot reach the rest of the site:
+
+| You write | The page gets |
+| --- | --- |
+| `.btn { color: red }` | `.registration-form .btn { color: red }` |
+| `a, p span { … }` | `.registration-form a, .registration-form p span { … }` |
+| `body { … }` / `:root { … }` | `.registration-form { … }` |
+| `@media (…) { .btn { … } }` | the inner rule is scoped, the query is kept |
+| `.registration-form .btn { … }` | unchanged — already scoped |
+
+`@keyframes` and `@font-face` are passed through untouched, since their contents are not
+selectors.
 
 ### Filters
 

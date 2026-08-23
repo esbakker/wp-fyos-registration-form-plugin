@@ -309,7 +309,7 @@ class FRF_Settings {
 							<textarea id="frf-custom-css" rows="8" class="large-text code"
 								name="<?php echo esc_attr( $key ); ?>[custom_css]"><?php echo esc_textarea( $s['custom_css'] ); ?></textarea>
 							<p class="description">
-								<?php esc_html_e( 'Printed after the plugin styles. Prefix your rules with .registration-form to keep them inside the form.', 'fyos-registration-form' ); ?>
+								<?php esc_html_e( 'Printed after the plugin styles. Selectors are scoped to the form automatically, so .btn { … } only affects buttons inside the form and cannot reach the rest of the site. Rules you prefix yourself are left as they are.', 'fyos-registration-form' ); ?>
 							</p>
 						</td>
 					</tr>

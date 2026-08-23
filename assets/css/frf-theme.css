@@ -368,6 +368,55 @@ body.modal-open {
 	overflow: hidden;
 }
 
+/*
+ * Pre-size the overlays *before* they reach the scope.
+ *
+ * BootstrapVue appends a popover to <body>, and Popper measures it there to
+ * decide where to put it — which happens before frf-portal.js can move it
+ * inside `.registration-form`. Measured unstyled, the popover is a full-width
+ * block, so Popper positions that huge box and the bubble opens far off to the
+ * left. These few rules give it its real dimensions from the moment it lands
+ * in the DOM, so the very first measurement is the right one.
+ *
+ * Unscoped on purpose, and safe: `b-popover` and `b-tooltip` are BootstrapVue's
+ * own class names, not generic Bootstrap ones a theme might use.
+ */
+/*
+ * These must mirror the scoped values above exactly — same font, same metrics,
+ * same borders — or the box still changes size on the way in and Popper is
+ * left one nudge behind. `inherit`/`em` resolve against <body>, which is the
+ * same text the form inherits, so they land on the same numbers.
+ */
+.b-popover,
+.b-popover *,
+.b-tooltip,
+.b-tooltip * {
+	/* Bootstrap's border-box reset only applies inside the scope; without it
+	   the max-width below excludes the border and the box is 1px wider. */
+	box-sizing: border-box;
+}
+
+.b-popover,
+.b-tooltip {
+	font-family: inherit;
+	font-size: 0.875em;
+	line-height: inherit;
+}
+
+.b-popover {
+	max-width: 276px;
+	border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.b-popover .popover-body,
+.b-popover .popover-header {
+	padding: 0.5rem 0.75rem;
+}
+
+.b-tooltip {
+	max-width: 200px;
+}
+
 .frf-portal.registration-form {
 	font-family: inherit;
 	color: inherit;

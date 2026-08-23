@@ -75,12 +75,43 @@
 	}
 
 	/**
+	 * Ask Popper to reposition the overlays it has open.
+	 *
+	 * Popper measures an overlay when it is created, which is before this
+	 * script can move it into the scope. Moving it changes its size, leaving
+	 * the position Popper calculated slightly stale. Popper recomputes on
+	 * window resize, so one synthetic resize — after the browser has applied
+	 * the new styles — puts every open overlay back where it belongs.
+	 */
+	function repositionOverlays() {
+		var fire = function () {
+			var event;
+
+			if ( typeof window.Event === 'function' ) {
+				event = new window.Event( 'resize' );
+			} else {
+				event = document.createEvent( 'Event' );
+				event.initEvent( 'resize', false, false );
+			}
+
+			window.dispatchEvent( event );
+		};
+
+		if ( window.requestAnimationFrame ) {
+			window.requestAnimationFrame( fire );
+		} else {
+			window.setTimeout( fire, 16 );
+		}
+	}
+
+	/**
 	 * Re-check the containers we are still waiting on. A transported modal is
 	 * mounted into its container a tick after the container is appended, so a
 	 * node that looked empty on arrival can become a portal later.
 	 */
 	function sweep() {
 		var still = [];
+		var moved = false;
 
 		for ( var i = 0; i < pending.length; i++ ) {
 			var el = pending[ i ];
@@ -93,6 +124,7 @@
 			if ( matches( el, SIGNATURE ) ) {
 				el.classList.add( TAGGED );
 				scopeHost().appendChild( el );
+				moved = true;
 				continue;
 			}
 
@@ -103,6 +135,10 @@
 			}
 
 			still.push( el );
+		}
+
+		if ( moved ) {
+			repositionOverlays();
 		}
 
 		// Anything that never received content is dropped after a while, so
